@@ -148,7 +148,7 @@ public class OnlineLDA {
     }
 
 
-    double approxBound( Documents docs) {
+    public double approxBound( Documents docs) {
         int[][] wordIds = docs.getTokenIds();
         int[][] wordCts = docs.getTokenCts();
         int batchD = docs.size();
