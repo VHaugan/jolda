@@ -49,7 +49,7 @@ public class Documents {
             build(docs, vocab);
     }
 
-    public Documents(String  doc, Vocabulary vocab) {
+    public Documents(String doc, Vocabulary vocab) {
         this.vocabulary = vocab;
         List<String> docs = new ArrayList<String> ();
         docs.add(doc);

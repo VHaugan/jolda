@@ -61,7 +61,7 @@ public class Execution {
 
         for(int i=0; i*batchSize < docs.size();++i){
             int max = Math.min((i+1)*batchSize, docs.size());
-            Documents documents = new Documents(docs.subList(i * batchSize, max), vocabulary);
+            Documents documents = new Documents(docs.subList(i * batchSize, max), vocabulary, true);
             Result result = lda.workOn(documents);
             System.out.println(result);
         }
