@@ -22,9 +22,8 @@ OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-import org.apache.commons.math.MathException;
-import org.apache.commons.math.distribution.GammaDistributionImpl;
-import org.apache.commons.math.special.Gamma;
+import org.apache.commons.math3.distribution.GammaDistribution;
+import org.apache.commons.math3.special.Gamma;
 
 import java.util.Arrays;
 
@@ -185,23 +184,19 @@ public class MatrixUtil {
         return result;
     }
     static class GammaSampling   {
-        private final GammaDistributionImpl gd;
+        private final GammaDistribution gd;
         public final static long DEFAULT_SEED = 1000000001L;
         public final static double DEFAULT_ALPHA = 100d;
         public final static double DEFAULT_BETA = 0.01d;
 
 
         public GammaSampling( ) {
-            this.gd = new GammaDistributionImpl(DEFAULT_ALPHA, DEFAULT_BETA);
+            this.gd = new GammaDistribution(DEFAULT_ALPHA, DEFAULT_BETA);
             this.gd.reseedRandomGenerator(DEFAULT_SEED);
         }
 
         double sample() {
-            try {
-                return gd.sample();
-            } catch (MathException e) {
-                throw new RuntimeException(e);
-            }
+            return gd.sample();
         }
 
         public double[][] batch(int W, int K) {
