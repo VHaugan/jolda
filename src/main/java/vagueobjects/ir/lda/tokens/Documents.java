@@ -41,9 +41,12 @@ public class Documents {
      */
     private int[][] tokenCts;
 
-    public Documents(List<String> docs, Vocabulary vocab) {
+    public Documents(List<String> docs, Vocabulary vocab, boolean rawString) {
         this.vocabulary = vocab;
-        build(docs, vocab);
+        if (rawString)
+            buildFromRawString(docs, vocab);
+        else
+            build(docs, vocab);
     }
 
     public Documents(String  doc, Vocabulary vocab) {
@@ -61,7 +64,7 @@ public class Documents {
         return list;
     }
 
-    private void build(List<String> docs, Vocabulary vocab){
+    private void buildFromRawString(List<String> docs, Vocabulary vocab){
 
         int numDocs = docs.size();
         this.wordIds = new int[numDocs][];
@@ -73,27 +76,41 @@ public class Documents {
                     .replaceAll("-", " ")
                     .replaceAll("[^a-z ]", "")
                     .replaceAll(" +", " ");
-            Map<Integer,Integer> counts = new LinkedHashMap<Integer, Integer>();
-            for(String token:  extractTokens(doc)){
-                if(vocab.contains(token)){
-                    int tokenId = vocab.getId(token);
-                    if(!counts.containsKey(tokenId)){
-                        counts.put(tokenId, 1);
-                    } else {
-                        int c = counts.get(tokenId);
-                        counts.put(tokenId, c+1);
-                    }
+            updateArraysWithDocument(docId, doc, vocab);
+        }
+    }
+
+    private void build(List<String> docs, Vocabulary vocab){
+        int numDocs = docs.size();
+        this.wordIds = new int[numDocs][];
+        this.tokenCts = new int[numDocs][];
+        for(int docId=0; docId<docs.size();++docId){
+            String doc = docs.get(docId);
+            updateArraysWithDocument(docId, doc, vocab);
+        }
+    }
+
+    private void updateArraysWithDocument(int docId, String doc, Vocabulary vocab){
+        Map<Integer,Integer> counts = new LinkedHashMap<Integer, Integer>();
+        for(String token:  extractTokens(doc)){
+            if(vocab.contains(token)){
+                int tokenId = vocab.getId(token);
+                if(!counts.containsKey(tokenId)){
+                    counts.put(tokenId, 1);
+                } else {
+                    int c = counts.get(tokenId);
+                    counts.put(tokenId, c+1);
                 }
             }
-            int tokenCount = counts.size();
-            wordIds[docId] = new int[tokenCount];
-            tokenCts[docId] = new int[tokenCount];
-            int i=0 ;
-            for(Map.Entry<Integer,Integer> e: counts.entrySet()){
-                wordIds[docId][i] = e.getKey();
-                tokenCts[docId][i] = e.getValue();
-                ++i;
-            }
+        }
+        int tokenCount = counts.size();
+        wordIds[docId] = new int[tokenCount];
+        tokenCts[docId] = new int[tokenCount];
+        int i=0 ;
+        for(Map.Entry<Integer,Integer> e: counts.entrySet()){
+            wordIds[docId][i] = e.getKey();
+            tokenCts[docId][i] = e.getValue();
+            ++i;
         }
     }
 
