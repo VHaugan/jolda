@@ -26,6 +26,7 @@ import org.apache.commons.io.IOUtils;
 import vagueobjects.ir.lda.tokens.Documents;
 import vagueobjects.ir.lda.online.OnlineLDA;
 import vagueobjects.ir.lda.online.Result;
+import vagueobjects.ir.lda.tokens.HashMapVocabulary;
 import vagueobjects.ir.lda.tokens.PlainVocabulary;
 import vagueobjects.ir.lda.tokens.Vocabulary;
 
@@ -45,7 +46,7 @@ public class Execution {
   
 
         int D=  10800;
-        int K = 100;
+        int K = 20;
         int batchSize= 1024;
 
         double tau =  1d;
@@ -54,14 +55,14 @@ public class Execution {
         double alpha = 1.d/K;
         double eta = 1.d/K;
 
-        Vocabulary vocabulary = new PlainVocabulary( dictPath);
+        Vocabulary vocabulary = new HashMapVocabulary( dictPath);
         OnlineLDA lda = new OnlineLDA(vocabulary.size(),K, D, alpha, eta, tau, kappa);
         List<String> docs = readDocs(docPath);
         long delta=0;
 
         for(int i=0; i*batchSize < docs.size();++i){
             int max = Math.min((i+1)*batchSize, docs.size());
-            Documents documents = new Documents(docs.subList(i * batchSize, max), vocabulary, true);
+            Documents documents = new Documents(docs.subList(i * batchSize, max), vocabulary, false);
             Result result = lda.workOn(documents);
             System.out.println(result);
         }

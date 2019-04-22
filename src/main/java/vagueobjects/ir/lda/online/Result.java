@@ -36,6 +36,7 @@ import java.util.*;
 public class Result {
     /**Number of terms per each tokens to show*/
     static int NUMBER_OF_TOKENS = 15;
+    private final Matrix gamma;
     private final Matrix lambda;
     private final double perplexity;
     private final Documents documents; 
@@ -48,12 +49,31 @@ public class Result {
      * @param bound  - variational bound
      * @param lambda   - variational distribution q(beta|lambda)
      */
-    public Result(Documents docs, int D, double bound, Matrix lambda) {
-        this.lambda = lambda; 
+    public Result(Documents docs, int D, double bound, Matrix gamma, Matrix lambda) {
+        this.lambda = lambda;
+        this.gamma = gamma;
         this.documents = docs;
         this.totalTokenCount = docs.getTokenCount();
         double perWordBound = (bound * docs.size())  / D / totalTokenCount;
         this.perplexity = Math.exp(-perWordBound);
+    }
+
+    public Matrix getTopics() {
+        int numDocs = gamma.getNumberOfRows();
+        double[][] normalizedTopics = new double[numDocs][];
+        for (int d = 0; d < numDocs; ++d) {
+            Vector termProbabilityD = gamma.getRow(d);
+            normalizedTopics[d] = new double[termProbabilityD.getLength()];
+            double sum = 0;
+
+            for (int i = 0; i < termProbabilityD.getLength(); ++i)
+                sum += termProbabilityD.elementAt(i);
+
+            for (int i = 0; i < termProbabilityD.getLength(); ++i)
+                normalizedTopics[d][i] = termProbabilityD.elementAt(i) / sum;
+        }
+
+        return new Matrix(normalizedTopics);
     }
 
     @Override

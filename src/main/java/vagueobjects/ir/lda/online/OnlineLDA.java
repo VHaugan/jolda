@@ -144,7 +144,7 @@ public class OnlineLDA {
 
 
         this.batchCount++;
-        return new Result(docs, D, bound, lambda);
+        return new Result(docs, D, bound, gamma, lambda);
     }
 
 
@@ -182,34 +182,6 @@ public class OnlineLDA {
         score+= sum(gammaLn(lambda).add(-gammaLn(eta)));
         score-= sum(gammaLn(lambda.sumByRows()).add(-gammaLn(eta * W)));
         return score;
-    }
-
-    public Vector getTopicsForDocument(Documents doc) {
-        int [] wordIds = doc.getTokenIds()[0];
-        int [] wordCts = doc.getTokenCts()[0];
-        int [] topicCts = new int[K];
-        int words = 0;
-
-        for (int i = 0; i < wordIds.length; ++i) {
-            Vector topicsForWord = stats.extractColumn(wordIds[i]);
-            int bestTopic = 0;
-            double bestScore = -1;
-            for (int j = 0; j < topicsForWord.getLength(); ++j) {
-                double score = topicsForWord.elementAt(j);
-                if (score > bestScore) {
-                    bestTopic = j;
-                    bestScore = score;
-                }
-            }
-            words += wordCts[i];
-            topicCts[bestTopic] += wordCts[i];
-        }
-
-        Vector topicsDistribution = new Vector(K);
-        for (int i = 0; i < K; ++i)
-            topicsDistribution.set(i, topicCts[i] / (double) words);
-
-        return topicsDistribution;
     }
 }
 
