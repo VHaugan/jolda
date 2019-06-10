@@ -32,9 +32,10 @@ import static vagueobjects.ir.lda.online.matrix.MatrixUtil.sum;
 public class OnlineLDA {
     public final static double MEAN_CHANGE_THRESHOLD = 1e-5;
     public final static int NUM_ITERATIONS = 200;
+    private static final int BATCH_MAX_ITERS = 10000;
 
     private int batchCount;
-    private final double kappa;
+    private double kappa;
     private final int K;
     private final int  D;
     private final int W;
@@ -145,6 +146,32 @@ public class OnlineLDA {
 
         this.batchCount++;
         return new Result(docs, D, bound, gamma, lambda);
+    }
+
+    public Result trainIteration(Documents docs) {
+        expectationStep(docs );
+
+        double bound = approxBound( docs);
+
+        this.lambda = (stats.product( (double )D/ docs.size())).add(eta);
+
+        this.eLogBeta = dirichletExpectation(lambda);
+        this.expELogBeta = exp(eLogBeta);
+
+        return new Result(docs, D, bound, gamma, lambda);
+    }
+
+    public Result trainBatch(Documents docs) {
+        double bound = 0, oldBound = 0;
+        Result res = null;
+        for (int i = 0; i < BATCH_MAX_ITERS; ++i) {
+            oldBound = bound;
+            res = trainIteration(docs);
+            bound = res.getBound();
+            if (Math.abs((oldBound - bound) / oldBound) < 0.00001)
+                break;
+        }
+        return res;
     }
 
 

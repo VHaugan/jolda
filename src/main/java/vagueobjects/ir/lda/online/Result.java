@@ -35,11 +35,12 @@ import java.util.*;
  */
 public class Result {
     /**Number of terms per each tokens to show*/
-    static int NUMBER_OF_TOKENS = 15;
+    static int NUMBER_OF_TOKENS = 8528;
     private final Matrix gamma;
     private final Matrix lambda;
+    private final double bound;
     private final double perplexity;
-    private final Documents documents; 
+    private final Documents documents;
     private final int totalTokenCount;
 
     /**
@@ -52,6 +53,7 @@ public class Result {
     public Result(Documents docs, int D, double bound, Matrix gamma, Matrix lambda) {
         this.lambda = lambda;
         this.gamma = gamma;
+        this.bound = bound;
         this.documents = docs;
         this.totalTokenCount = docs.getTokenCount();
         double perWordBound = (bound * docs.size())  / D / totalTokenCount;
@@ -115,4 +117,7 @@ public class Result {
         return new ArrayList<Tuple>(tuples).subList(0, numTerms);
     }
 
+    public double getBound() {
+        return bound;
+    }
 }
