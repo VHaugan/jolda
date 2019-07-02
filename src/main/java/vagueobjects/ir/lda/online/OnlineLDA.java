@@ -23,6 +23,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 import vagueobjects.ir.lda.online.matrix.Matrix;
 import vagueobjects.ir.lda.online.matrix.Vector;
+import vagueobjects.ir.lda.online.persistence.LDAModel;
 import vagueobjects.ir.lda.tokens.Documents;
 
 import static vagueobjects.ir.lda.online.matrix.MatrixUtil.*;
@@ -70,6 +71,22 @@ public class OnlineLDA {
         this.batchCount = 0;
         //initialize the variational distribution q(beta|lambda)
         this.lambda = sampleGamma(W, K);
+        //posterior over topics -beta is parameterized by lambda
+        this.eLogBeta = dirichletExpectation(lambda);
+        this.expELogBeta = exp(eLogBeta);
+    }
+
+    public OnlineLDA(int W, int K, int D, double alpha,
+                     double eta, double tau0, double kappa, int batchCount, Matrix lambda) {
+        this.K = K;
+        this.D = D;
+        this.W = W;
+        this.alpha = alpha;
+        this.eta = eta;
+        this.tau0 = tau0;
+        this.kappa = kappa;
+        this.batchCount = batchCount;
+        this.lambda = lambda;
         //posterior over topics -beta is parameterized by lambda
         this.eLogBeta = dirichletExpectation(lambda);
         this.expELogBeta = exp(eLogBeta);
@@ -168,14 +185,16 @@ public class OnlineLDA {
             oldBound = bound;
             res = trainIteration(docs);
             bound = res.getBound();
+            System.out.println(i + ": " + bound);
             if (Math.abs((oldBound - bound) / oldBound) < 0.00001)
                 break;
         }
+        batchCount = docs.size();
         return res;
     }
 
 
-    public double approxBound( Documents docs) {
+    private double approxBound( Documents docs) {
         int[][] wordIds = docs.getTokenIds();
         int[][] wordCts = docs.getTokenCts();
         int batchD = docs.size();
@@ -210,6 +229,112 @@ public class OnlineLDA {
         score-= sum(gammaLn(lambda.sumByRows()).add(-gammaLn(eta * W)));
         return score;
     }
+
+    public double computeBound(Documents docs) {
+
+        int [][] wordIds = docs.getTokenIds();
+        int [][] wordCts = docs.getTokenCts();
+        int batchD = docs.size();
+
+        //variational parameter over documents x topics
+        //parameters over documents x topics
+        Matrix gammaTemp = sampleGamma(K, batchD);
+
+        Matrix eLogTheta = dirichletExpectation(gammaTemp);
+        Matrix expELogTheta = exp(eLogTheta);
+
+        for (int d = 0; d < batchD; ++d) {
+            int[] ids = wordIds[d];
+            if(ids.length==0){
+                continue;
+            }
+
+            Vector cts = new Vector(wordCts[d]);
+            //Topic proportions
+            Vector gammaD = gammaTemp.getRow(d);
+
+            Vector expELogThetaD = expELogTheta.getRow(d);
+            Matrix expELogBetaD = this.expELogBeta.extractColumns(ids);
+
+            Vector phiNorm = expELogThetaD.dot(expELogBetaD);
+            phiNorm = phiNorm.add(1E-100);
+            Vector lastGamma;
+
+            for (int it=0; it < NUM_ITERATIONS; ++it) {
+                lastGamma = gammaD;
+                Vector v1 = cts.div(phiNorm).dot(expELogBetaD.tr());
+                gammaD =  expELogThetaD.product(v1).add(alpha);
+
+                Vector eLogThetaD = dirichletExpectation(gammaD);
+                expELogThetaD = exp(eLogThetaD);
+
+                phiNorm = expELogThetaD.dot(expELogBetaD).add(1E-100);
+                if (gammaD.closeTo(lastGamma, MEAN_CHANGE_THRESHOLD*K)) {
+                    break;
+                }
+            }
+            gammaTemp.setRow(d, gammaD);
+        }
+
+        double score =0d;
+
+        double tMax=0;
+        for(int d=0; d<batchD;++d){
+            Vector ids = new Vector(wordIds[d]);
+            Vector cts = new Vector(wordCts[d]);
+            Vector phiNorm = new Vector(ids.getLength());
+
+            for(int i=0; i< ids.getLength();++i){
+                Vector v =eLogBeta.extractColumn(wordIds[d][i]);
+                Vector topics =eLogTheta.getRow(d);
+                Vector u = v.add(topics) ;
+                tMax = u.max();
+
+                phiNorm.set(i, Math.log(sum(exp(u.add(-tMax)))) + tMax);
+            }
+
+            score += sum(cts.product(phiNorm));
+        }
+        score-= sum(gammaTemp.add(-alpha).product(eLogTheta));
+        score+= sum(gammaLn(gammaTemp).add(-gammaLn(alpha)));
+
+        score-= sum(gammaLn(gammaTemp.sumByRows()).add(-gammaLn(alpha * K)));
+        score*= D/(double)docs.size();
+        score-= sum(lambda.add(-eta).product(eLogBeta ));
+        score+= sum(gammaLn(lambda).add(-gammaLn(eta)));
+        score-= sum(gammaLn(lambda.sumByRows()).add(-gammaLn(eta * W)));
+        return score;
+    }
+
+    public LDAModel exportModel() {
+        return new LDAModel(
+                K,
+                D,
+                W,
+                alpha,
+                eta,
+                tau0,
+                kappa,
+                batchCount,
+                lambda
+        );
+    }
+
+    public static OnlineLDA importModel(LDAModel model) {
+        return new OnlineLDA(
+                model.getW(),
+                model.getK(),
+                model.getD(),
+                model.getAlpha(),
+                model.getEta(),
+                model.getTau0(),
+                model.getKappa(),
+                model.getBatchCount(),
+                model.getLambda()
+        );
+    }
+
+    public void resetBatchCount() {
+        this.batchCount = 0;
+    }
 }
-
-

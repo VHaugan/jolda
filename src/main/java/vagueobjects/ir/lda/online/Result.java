@@ -35,7 +35,7 @@ import java.util.*;
  */
 public class Result {
     /**Number of terms per each tokens to show*/
-    static int NUMBER_OF_TOKENS = 8528;
+    static int NUMBER_OF_TOKENS = 20;
     private final Matrix gamma;
     private final Matrix lambda;
     private final double bound;
@@ -76,6 +76,10 @@ public class Result {
         }
 
         return new Matrix(normalizedTopics);
+    }
+
+    public Matrix getLambda() {
+        return lambda;
     }
 
     @Override
