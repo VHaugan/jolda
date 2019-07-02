@@ -330,7 +330,7 @@ public class OnlineLDA {
                 tau0,
                 kappa,
                 batchCount,
-                lambda
+                lambda.copy()
         );
     }
 

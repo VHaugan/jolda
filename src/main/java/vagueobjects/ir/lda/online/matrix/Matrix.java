@@ -39,6 +39,9 @@ public class Matrix {
         this.data[0] = input;
     }
 
+    public Matrix copy() {
+        return new Matrix(this.data);
+    }
 
     public int getNumberOfColumns() {
         return data[0].length;
