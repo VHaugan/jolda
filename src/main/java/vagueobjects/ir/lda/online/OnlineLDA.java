@@ -320,6 +320,20 @@ public class OnlineLDA {
         );
     }
 
+    public OnlineLDA copy() {
+        return new OnlineLDA(
+                W,
+                K,
+                D,
+                alpha,
+                eta,
+                tau0,
+                kappa,
+                batchCount,
+                lambda
+        );
+    }
+
     public static OnlineLDA importModel(LDAModel model) {
         return new OnlineLDA(
                 model.getW(),
