@@ -56,6 +56,22 @@ public class Documents {
         build(docs, vocab);
     }
 
+    // Create multiple from ids and counts
+    public Documents(int[][] wordIds, int[][] tokenCts) {
+        this.vocabulary = null;
+        this.wordIds = wordIds;
+        this.tokenCts = tokenCts;
+    }
+
+    // Create from single from ids and counts
+    public Documents(int[] wordIds, int[] tokenCts) {
+        this.vocabulary = null;
+        this.wordIds = new int[1][];
+        this.tokenCts = new int[1][];
+        this.wordIds[0] = wordIds;
+        this.tokenCts[0] = tokenCts;
+    }
+
     public List<String> toString(List<Tuple> tuples){
         List<String> list = new ArrayList<String>();
         for (Tuple tuple: tuples){
